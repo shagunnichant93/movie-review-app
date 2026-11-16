@@ -1,3 +1,4 @@
+
 function MovieCard({ title, year, genre, rating, poster }) {
 
   return (
