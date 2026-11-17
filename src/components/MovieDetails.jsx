@@ -6,9 +6,9 @@ function MovieDetails({ movie, onClose, userRatings, setUserRatings })  {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
 
-      <div className="bg-gray-900 rounded-xl max-w-3xl w-full p-6 relative">
+      <div className="bg-gray-900 rounded-xl max-w-3xl w-full p-4 sm:p-6 relative my-auto">
 
         {/* Close Button */}
         <button
@@ -28,7 +28,7 @@ function MovieDetails({ movie, onClose, userRatings, setUserRatings })  {
                 : "https://placehold.co/300x450?text=No+Poster"
             }
             alt={movie.title}
-            className="w-full md:w-64 rounded-lg object-cover"
+            className="w-full max-w-[200px] md:w-64 mx-auto md:mx-0 rounded-lg object-cover"
           />
 
           {/* Movie Information */}
@@ -43,6 +43,9 @@ function MovieDetails({ movie, onClose, userRatings, setUserRatings })  {
 
             <p className="text-yellow-400 mb-4">
               ⭐ {movie.vote_average?.toFixed(1) || "N/A"}/10
+            </p>
+            <p className="text-green-400 mb-4">
+                Your Rating: {userRatings[movie.id] || "Not rated"}/5
             </p>
 
             <h3 className="text-lg font-semibold mb-2">

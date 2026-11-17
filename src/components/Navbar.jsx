@@ -1,6 +1,6 @@
 function Navbar() {
   return (
-    <nav className="flex items-center justify-between px-8 py-5 border-b border-gray-800">
+    <nav className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-8 py-5 border-b border-gray-800">
 
       {/* Application Logo */}
       <h1 className="text-2xl font-bold text-red-500">
@@ -8,7 +8,7 @@ function Navbar() {
       </h1>
 
       {/* Navigation Links */}
-      <div className="flex gap-6 text-gray-300">
+      <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-gray-300">
 
         <a href="#" className="hover:text-white">
           Home

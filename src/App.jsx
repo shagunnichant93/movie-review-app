@@ -11,7 +11,30 @@ import {
 
 function App() {
 const [selectedMovie, setSelectedMovie] = useState(null)
-const [userRatings, setUserRatings] = useState({})
+const [loading, setLoading] = useState(true)
+const [error, setError] = useState("")
+const [userRatings, setUserRatings] = useState(() => {
+  const savedRatings = localStorage.getItem("movieRatings")
+
+  return savedRatings ? JSON.parse(savedRatings) : {}
+})
+useEffect(() => {
+  localStorage.setItem(
+    "movieRatings",
+    JSON.stringify(userRatings)
+  )
+}, [userRatings])
+const calculateAverageRating = () => {
+  const ratings = Object.values(userRatings)
+
+  if (ratings.length === 0) {
+    return 0
+  }
+
+  const total = ratings.reduce((sum, rating) => sum + rating, 0)
+
+  return (total / ratings.length).toFixed(1)
+}
   // TMDB Movies State
   const [tmdbMovies, setTmdbMovies] = useState([])
 
@@ -31,16 +54,27 @@ const [userRatings, setUserRatings] = useState({})
   const [selectedRating, setSelectedRating] = useState("")
 
   // Fetch Movies and Genres when App loads
-  useEffect(() => {
 
-    const loadMovies = async () => {
-      try {
-        const data = await getPopularMovies()
-        setTmdbMovies(data)
-      } catch (error) {
-        console.error("Error loading movies:", error)
-      }
-    }
+const loadMovies = async () => {
+  try {
+    setLoading(true)
+    setError("")
+
+    const data = await getPopularMovies()
+    setTmdbMovies(data)
+
+  } catch (error) {
+    console.error("Error loading movies:", error)
+    setError("Unable to load movies. Please try again.")
+
+  } finally {
+    setLoading(false)
+  }
+}
+
+  useEffect(() => {
+loadMovies()
+
 
     const loadGenres = async () => {
       try {
@@ -123,17 +157,17 @@ const [userRatings, setUserRatings] = useState({})
           placeholder="Search movies..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-80 max-w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
+          className="w-full sm:w-80 max-w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
         />
 
         {/* Filters */}
-        <div className="flex flex-wrap justify-center gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 mt-6 px-4">
 
           {/* Genre Filter */}
           <select
             value={selectedGenre}
             onChange={(e) => setSelectedGenre(e.target.value)}
-            className="p-3 rounded-lg bg-gray-800 text-white"
+            className="w-full sm:w-auto p-3 rounded-lg bg-gray-800 text-white"
           >
             <option value="">All Genres</option>
 
@@ -149,7 +183,7 @@ const [userRatings, setUserRatings] = useState({})
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="p-3 rounded-lg bg-gray-800 text-white"
+            className="w-full sm:w-auto p-3 rounded-lg bg-gray-800 text-white"
           >
             <option value="">All Years</option>
 
@@ -165,7 +199,7 @@ const [userRatings, setUserRatings] = useState({})
           <select
             value={selectedRating}
             onChange={(e) => setSelectedRating(e.target.value)}
-            className="p-3 rounded-lg bg-gray-800 text-white"
+            className="w-full sm:w-auto p-3 rounded-lg bg-gray-800 text-white"
           >
             <option value="">All Ratings</option>
             <option value="7">7+</option>
@@ -184,6 +218,29 @@ const [userRatings, setUserRatings] = useState({})
         <h2 className="text-2xl font-bold mb-6">
           Popular Movies
         </h2>
+        {loading && (
+  <p className="text-center text-yellow-400 text-lg">
+    Loading movies...
+  </p>
+)}
+
+{error && (
+  <div className="text-center mt-4">
+
+    <p className="text-red-400 mb-3">
+      {error}
+    </p>
+
+    <button
+      onClick={loadMovies}
+      className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg"
+    >
+      Retry
+    </button>
+
+  </div>
+)}
+
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
