@@ -88,10 +88,10 @@ npm install
 Create a `.env` file in the root directory:
 
 ```env
-VITE_TMDB_API_KEY=ea4ae4ba6b1587a2b9baaa1b40e221aa
+VITE_TMDB_API_KEY=your_tmdb_api_key
 ```
 
-Replace `ea4ae4ba6b1587a2b9baaa1b40e221aa` with your own TMDB API key.
+Replace `your_tmdb_api_key` with your own TMDB API key.
 
 You can obtain an API key from:
 
