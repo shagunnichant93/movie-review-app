@@ -1,4 +1,4 @@
-
+import MovieDetails from "./components/MovieDetails"
 import { useState, useEffect } from "react"
 
 import Navbar from "./components/Navbar"
@@ -10,7 +10,8 @@ import {
 } from "./services/tmdb"
 
 function App() {
-
+const [selectedMovie, setSelectedMovie] = useState(null)
+const [userRatings, setUserRatings] = useState({})
   // TMDB Movies State
   const [tmdbMovies, setTmdbMovies] = useState([])
 
@@ -216,6 +217,7 @@ function App() {
                       ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
                       : "https://placehold.co/300x450?text=No+Poster"
                   }
+                  onClick={() => setSelectedMovie(movie)}
                 />
               )
             })
@@ -231,7 +233,12 @@ function App() {
         </div>
 
       </div>
-
+          <MovieDetails
+            movie={selectedMovie}
+            onClose={() => setSelectedMovie(null)}
+            userRatings={userRatings}
+            setUserRatings={setUserRatings}
+          />
     </div>
   )
 }
