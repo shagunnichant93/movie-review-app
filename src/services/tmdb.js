@@ -1,6 +1,9 @@
 
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY
 
+console.log("TMDB API KEY EXISTS:", Boolean(API_KEY))
+console.log("TMDB API KEY LENGTH:", API_KEY?.length)
+
 const BASE_URL = "https://api.themoviedb.org/3"
 
 export async function getPopularMovies() {
