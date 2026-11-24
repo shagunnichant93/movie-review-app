@@ -1,12 +1,15 @@
 import MovieDetails from "./components/MovieDetails"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 import Navbar from "./components/Navbar"
 import MovieCard from "./components/MovieCard"
 
 import {
   getPopularMovies,
-  getMovieGenres
+  getMovieGenres,
+  searchMovies,
+  getPopularMoviesPaginated,
+  searchMoviesPaginated
 } from "./services/tmdb"
 
 function App() {
@@ -41,8 +44,13 @@ const calculateAverageRating = () => {
   // Movie Genres State
   const [genres, setGenres] = useState([])
 
+  // Pagination states
+const [currentPage, setCurrentPage] = useState(1)
+const [totalPages, setTotalPages] = useState(1)
   // Search State
   const [searchTerm, setSearchTerm] = useState("")
+
+  const isFirstSearch = useRef(true)
 
   // Genre Filter State
   const [selectedGenre, setSelectedGenre] = useState("")
@@ -55,84 +63,112 @@ const calculateAverageRating = () => {
 
   // Fetch Movies and Genres when App loads
 
-const loadMovies = async () => {
+
+const loadMovies = async (page = 1) => {
   try {
     setLoading(true)
     setError("")
 
-    const data = await getPopularMovies()
-    setTmdbMovies(data)
+    const data = await getPopularMoviesPaginated(page)
+
+    setTmdbMovies(data.results)
+    setCurrentPage(data.page)
+    setTotalPages(data.total_pages)
 
   } catch (error) {
     console.error("Error loading movies:", error)
     setError("Unable to load movies. Please try again.")
-
   } finally {
     setLoading(false)
   }
 }
 
+
   useEffect(() => {
-loadMovies()
+  loadMovies()
 
-
-    const loadGenres = async () => {
-      try {
-        const data = await getMovieGenres()
-        setGenres(data)
-      } catch (error) {
-        console.error("Error loading genres:", error)
-      }
+  const loadGenres = async () => {
+    try {
+      const data = await getMovieGenres()
+      setGenres(data)
+    } catch (error) {
+      console.error("Error loading genres:", error)
     }
+  }
 
-    loadMovies()
-    loadGenres()
+  loadGenres()
 
-  }, [])
+}, [])
 
-  // Get available years from TMDB movies
-  const availableYears = [
-    ...new Set(
-      tmdbMovies
-        .map((movie) => movie.release_date?.substring(0, 4))
-        .filter(Boolean)
-    )
-  ].sort((a, b) => Number(b) - Number(a))
 
-  // Filter Movies
-  const filteredMovies = tmdbMovies.filter((movie) => {
+useEffect(() => {
+  // Skip the first render
+  if (isFirstSearch.current) {
+    isFirstSearch.current = false
+    return
+  }
 
-    // Search Filter
-    const matchesSearch = movie.title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+  // If search is empty, load popular movies
+  if (!searchTerm.trim()) {
+    loadMovies(currentPage)
+    return
+  }
 
-    // Genre Filter
-    const matchesGenre =
-      selectedGenre === "" ||
-      (movie.genre_ids || []).includes(Number(selectedGenre))
+  // Wait 500ms after typing
+  const timer = setTimeout(async () => {
+    try {
+      setLoading(true)
+      setError("")
 
-    // Year Filter
-    const movieYear = movie.release_date
-      ? movie.release_date.substring(0, 4)
-      : ""
+      const data = await searchMoviesPaginated(
+        searchTerm.trim(),
+        currentPage
+      )
 
-    const matchesYear =
-      selectedYear === "" || movieYear === selectedYear
+      setTmdbMovies(data.results)
+      setCurrentPage(data.page)
+      setTotalPages(data.total_pages)
 
-    // Rating Filter
-    const matchesRating =
-      selectedRating === "" ||
-      movie.vote_average >= Number(selectedRating)
+    } catch (error) {
+      console.error("Error searching movies:", error)
+      setError("Unable to search movies. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }, 500)
 
-    return (
-      matchesSearch &&
-      matchesGenre &&
-      matchesYear &&
-      matchesRating
-    )
-  })
+  return () => clearTimeout(timer)
 
+}, [searchTerm, currentPage])
+
+// Get available years from currently loaded movies
+const availableYears = [
+  ...new Set(
+    tmdbMovies
+      .map((movie) => movie.release_date?.substring(0, 4))
+      .filter(Boolean)
+  )
+].sort((a, b) => Number(b) - Number(a))
+// Apply Genre, Year and Rating Filters
+const filteredMovies = tmdbMovies.filter((movie) => {
+
+  const matchesGenre =
+    selectedGenre === "" ||
+    (movie.genre_ids || []).includes(Number(selectedGenre))
+
+  const movieYear = movie.release_date
+    ? movie.release_date.substring(0, 4)
+    : ""
+
+  const matchesYear =
+    selectedYear === "" || movieYear === selectedYear
+
+  const matchesRating =
+    selectedRating === "" ||
+    movie.vote_average >= Number(selectedRating)
+
+  return matchesGenre && matchesYear && matchesRating
+})
   return (
 
     <div className="min-h-screen bg-gray-950 text-white">
@@ -156,7 +192,10 @@ loadMovies()
           type="text"
           placeholder="Search movies..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+  setSearchTerm(e.target.value)
+  setCurrentPage(1)
+}}
           className="w-full sm:w-80 max-w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
         />
 
@@ -216,8 +255,8 @@ loadMovies()
       <div className="px-8 pb-12">
 
         <h2 className="text-2xl font-bold mb-6">
-          Popular Movies
-        </h2>
+  {searchTerm.trim() ? "Search Results" : "Popular Movies"}
+</h2>
         {loading && (
   <p className="text-center text-yellow-400 text-lg">
     Loading movies...
@@ -288,6 +327,34 @@ loadMovies()
           )}
 
         </div>
+
+{/* Pagination */}
+{totalPages > 1 && (
+  <div className="flex justify-center items-center gap-4 mt-10">
+
+    <button
+      onClick={() => setCurrentPage((prev) => prev - 1)}
+      disabled={currentPage === 1}
+      className="px-5 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+    >
+      Previous
+    </button>
+
+    <span className="text-white">
+      Page {currentPage} of {totalPages}
+    </span>
+
+    <button
+      onClick={() => setCurrentPage((prev) => prev + 1)}
+      disabled={currentPage === totalPages}
+      className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
+    >
+      Next
+    </button>
+
+  </div>
+)}
+
 
       </div>
           <MovieDetails
